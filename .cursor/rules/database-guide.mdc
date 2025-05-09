@@ -1,0 +1,56 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 数据库指南
+
+项目使用双数据库架构，分别使用MySQL和MongoDB存储不同类型的数据。
+
+## MySQL (关系型数据)
+
+MySQL主要用于存储结构化数据和需要事务支持的数据。
+
+配置信息：
+- 版本: 8.0
+- 端口: 13306 (主机) -> 3306 (容器)
+- 连接URL: `mysql://root:root@mysql:3306/quiztest`
+- 数据库名: quiztest
+
+更多配置详情请参考：[DATABASE_CONFIG.md](mdc:DATABASE_CONFIG.md)
+
+## MongoDB (文档型数据库)
+
+MongoDB主要用于存储非结构化或半结构化数据。
+
+配置信息：
+- 版本: 6.0
+- 端口: 27018 (主机) -> 27017 (容器)
+- 连接URL: `mongodb://mongodb:27017/quiztest`
+- 数据库名: quiztest
+
+MongoDB数据导入目录：[docker/mongo-dump/quiztest](mdc:docker/mongo-dump/quiztest)
+
+## 数据持久化
+
+数据通过Docker卷持久化：
+- MySQL: quiztest_mysql_data
+- MongoDB: quiztest_mongodb_data
+
+## 缓存 (Redis)
+
+Redis用于缓存和会话管理：
+- 版本: 7.0
+- 端口: 16379 (主机) -> 6379 (容器)
+- 连接URL: `redis://redis:6379`
+
+## 数据模型
+
+后端数据模型定义位于：
+- MySQL模型: backend/src/models/
+- MongoDB模型: [backend/src/models/mongoose/](mdc:backend/src/models/mongoose)
+
+## 备份和恢复
+
+MySQL初始化脚本: [docker/mysql-dump.sql](mdc:docker/mysql-dump.sql)
+MongoDB初始化脚本: [docker/mongo-init.sh](mdc:docker/mongo-init.sh)

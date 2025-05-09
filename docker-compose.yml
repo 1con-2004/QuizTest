@@ -1,0 +1,113 @@
+# 服务配置
+services:
+  # Node.js 后端服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: quiztest-backend
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=mysql://root:root@mysql:3306/quiztest
+      - MONGODB_URI=mongodb://mongodb:27017/quiztest
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=quiztest-secret-key
+    depends_on:
+      - mysql
+      - mongodb
+      - redis
+    restart: always
+    networks:
+      - quiztest-network
+
+  # React 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: quiztest-frontend
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=/api
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - quiztest-network
+
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: quiztest-mysql
+    ports:
+      - "13306:3306"
+    volumes:
+      - quiztest_mysql_data:/var/lib/mysql
+      - ./docker/mysql-dump.sql:/docker-entrypoint-initdb.d/mysql-dump.sql
+      - ./docker/mysql-init.sh:/docker-entrypoint-initdb.d/mysql-init.sh
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=quiztest
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    networks:
+      - quiztest-network
+
+  # MongoDB 数据库
+  mongodb:
+    image: mongo:6.0
+    container_name: quiztest-mongodb
+    ports:
+      - "27018:27017"
+    volumes:
+      - quiztest_mongodb_data:/data/db
+      - ./docker/mongo-dump:/docker-entrypoint-initdb.d/mongo-dump
+      - ./docker/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh
+    restart: always
+    networks:
+      - quiztest-network
+
+  # Redis 缓存
+  redis:
+    image: redis:7.0
+    container_name: quiztest-redis
+    ports:
+      - "16379:6379"
+    volumes:
+      - quiztest_redis_data:/data
+    restart: always
+    networks:
+      - quiztest-network
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:1.21
+    container_name: quiztest-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf:/etc/nginx/conf.d
+      - ./nginx/certs:/etc/nginx/certs
+      - ./frontend/dist:/usr/share/nginx/html
+    depends_on:
+      - backend
+      - frontend
+    restart: always
+    networks:
+      - quiztest-network
+
+# 命名卷标
+volumes:
+  quiztest_mysql_data:
+    name: quiztest_mysql_data
+  quiztest_mongodb_data:
+    name: quiztest_mongodb_data
+  quiztest_redis_data:
+    name: quiztest_redis_data
+
+# 网络
+networks:
+  quiztest-network:
+    driver: bridge 

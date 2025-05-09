@@ -1,0 +1,47 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 后端架构指南
+
+项目后端位于[backend/](mdc:backend)目录，使用Node.js开发。
+
+## 目录结构
+
+- `src/`: 源代码目录
+  - `config/`: 配置文件
+  - `controllers/`: API控制器，处理HTTP请求
+  - `middlewares/`: Express中间件
+  - `models/`: 数据模型
+    - `mongoose/`: MongoDB模型(Mongoose)
+  - `routes/`: API路由定义
+  - `services/`: 业务逻辑服务
+  - `utils/`: 工具函数和辅助方法
+
+## 数据库连接
+
+项目使用双数据库架构：
+1. **MySQL**: 用于关系型数据
+   - 连接URL: `mysql://root:root@mysql:3306/quiztest`
+   
+2. **MongoDB**: 用于非结构化数据
+   - 连接URL: `mongodb://mongodb:27017/quiztest`
+
+## 缓存
+
+使用Redis作为缓存层：
+- 连接URL: `redis://redis:6379`
+
+## 认证与授权
+
+使用JWT进行认证：
+- JWT密钥配置在环境变量中：`JWT_SECRET`
+
+## API设计原则
+
+1. RESTful API设计
+2. 控制器负责处理HTTP请求和响应
+3. 服务层封装业务逻辑
+4. 数据访问通过模型层进行
+5. 使用中间件处理认证、日志等横切关注点

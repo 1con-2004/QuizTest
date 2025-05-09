@@ -1,0 +1,54 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Docker配置指南
+
+项目使用Docker Compose进行容器化管理，主要配置文件为[docker-compose.yml](mdc:docker-compose.yml)。
+
+## 主要服务
+
+1. **后端服务 (backend)**
+   - 基于Node.js
+   - 暴露3000端口
+   - 连接到MySQL、MongoDB和Redis
+   - 环境变量配置在docker-compose.yml和[.env](mdc:.env)文件中
+
+2. **前端服务 (frontend)**
+   - 基于React
+   - 编译后的静态文件由Nginx提供服务
+
+3. **MySQL数据库**
+   - 版本：8.0
+   - 端口映射：13306:3306
+   - 初始化脚本：[docker/mysql-dump.sql](mdc:docker/mysql-dump.sql)和[docker/mysql-init.sh](mdc:docker/mysql-init.sh)
+   - 持久化存储：quiztest_mysql_data卷
+
+4. **MongoDB数据库**
+   - 版本：6.0
+   - 端口映射：27018:27017
+   - 初始化脚本：mongo-init.sh
+   - 持久化存储：quiztest_mongodb_data卷
+
+5. **Redis缓存**
+   - 版本：7.0
+   - 端口映射：16379:6379
+   - 持久化存储：quiztest_redis_data卷
+
+6. **Nginx代理**
+   - 版本：1.21
+   - 端口映射：80:80, 443:443（HTTP和HTTPS）
+   - 配置目录：[nginx/conf](mdc:nginx/conf)
+   - SSL证书：[nginx/certs](mdc:nginx/certs)
+
+## 网络配置
+
+所有服务通过`quiztest-network`桥接网络通信。
+
+## 数据持久化
+
+使用命名卷存储数据：
+- quiztest_mysql_data
+- quiztest_mongodb_data
+- quiztest_redis_data

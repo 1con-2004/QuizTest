@@ -1,0 +1,40 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 前端架构指南
+
+项目前端位于[frontend/](mdc:frontend)目录，使用React框架开发。
+
+## 目录结构
+
+- `src/`: 源代码目录
+  - `api/`: API请求封装
+  - `assets/`: 静态资源（图片、图标等）
+  - `components/`: 可复用的React组件
+  - `config/`: 配置文件
+  - `context/`: React Context提供者
+  - `hooks/`: 自定义React Hooks
+  - `pages/`: 页面组件
+    - `Home/`: 首页组件
+  - `styles/`: 全局样式
+  - `types/`: TypeScript类型定义
+  - `utils/`: 工具函数
+
+## 构建输出
+
+- `dist/`: Vite构建输出目录
+  - `assets/`: 打包后的资源文件
+
+## 环境配置
+
+环境变量配置以`VITE_`前缀，在docker-compose.yml中设置：
+- `VITE_API_URL`: API服务地址
+
+## 最佳实践
+
+1. 组件应该按功能和重用性组织
+2. 使用Context管理全局状态
+3. 使用自定义Hooks抽象复杂逻辑
+4. 按页面组织路由和组件结构
