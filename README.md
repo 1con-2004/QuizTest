@@ -30,8 +30,8 @@ QuizTest
 - Node.js 16+
 - PNPM 7+
 - MySQL 8.0
-- MongoDB 6.0
-- Redis 7.0
+- MongoDB 7.0
+- Redis 8.0
 
 #### 1.2 启动本地开发环境
 

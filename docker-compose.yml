@@ -56,7 +56,7 @@ services:
 
   # MongoDB 数据库
   mongodb:
-    image: mongo:6.0
+    image: mongo:7.0
     container_name: quiztest-mongodb
     ports:
       - "27018:27017"
@@ -70,7 +70,7 @@ services:
 
   # Redis 缓存
   redis:
-    image: redis:7.0
+    image: redis:8.0
     container_name: quiztest-redis
     ports:
       - "16379:6379"
