@@ -1,17 +1,19 @@
 # 服务配置
 services:
-  # Node.js 后端服务
+  # Java 后端服务
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: quiztest-backend
     environment:
-      - NODE_ENV=development
-      - PORT=3000
-      - DATABASE_URL=mysql://root:root@mysql:3306/quiztest
-      - MONGODB_URI=mongodb://mongodb:27017/quiztest
-      - REDIS_URL=redis://redis:6379
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/quiztest
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/quiztest
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
       - JWT_SECRET=quiztest-secret-key
     depends_on:
       - mysql

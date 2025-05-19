@@ -39,6 +39,24 @@ cleanup_volumes() {
 # 检查Docker是否运行
 if ! docker info > /dev/null 2>&1; then
     error "Docker未运行，请先启动Docker"
+    
+    # 根据不同操作系统给出启动Docker的提示
+    case "$(uname -s)" in
+        Darwin)
+            echo -e "${YELLOW}请启动Docker Desktop应用程序。${NC}"
+            echo -e "${YELLOW}您可以通过以下方式启动：${NC}"
+            echo -e "1. 在应用程序文件夹中打开Docker.app"
+            echo -e "2. 或在终端中运行: open -a Docker"
+            ;;
+        Linux)
+            echo -e "${YELLOW}请启动Docker服务：${NC}"
+            echo -e "sudo systemctl start docker"
+            ;;
+        *)
+            echo -e "${YELLOW}请确保Docker服务已启动。${NC}"
+            ;;
+    esac
+    exit 1
 fi
 
 # 检查工作目录
@@ -48,11 +66,15 @@ fi
 
 info "=== 开始部署到Docker环境 ==="
 
-# 1. 构建前端生产环境代码
+# 1. 构建后端生产环境代码
+info "构建后端代码..."
+(cd backend && mvn clean package -DskipTests) || error "后端构建失败"
+
+# 2. 构建前端生产环境代码
 info "构建前端代码..."
 (cd frontend && pnpm build) || error "前端构建失败"
 
-# 2. 导出MySQL数据库
+# 3. 导出MySQL数据库
 info "导出本地MySQL数据..."
 MYSQL_DUMP_FILE="./docker/mysql-dump.sql"
 LOCAL_MYSQL_PASSWORD="root" # 根据实际情况修改
@@ -67,7 +89,7 @@ else
   warn "未找到mysqldump命令，请手动导出数据"
 fi
 
-# 3. 导出MongoDB数据库（如需要）
+# 4. 导出MongoDB数据库（如需要）
 info "导出本地MongoDB数据..."
 MONGO_DUMP_DIR="./docker/mongo-dump"
 mkdir -p "$MONGO_DUMP_DIR"
@@ -81,7 +103,7 @@ else
   warn "未找到mongodump命令，请手动导出数据"
 fi
 
-# 4. 添加MySQL导入脚本
+# 5. 添加MySQL导入脚本
 info "创建数据库导入脚本..."
 cat > ./docker/mysql-init.sh << EOF
 #!/bin/bash
@@ -93,7 +115,7 @@ echo "数据导入完成"
 EOF
 chmod +x ./docker/mysql-init.sh
 
-# 5. 添加MongoDB导入脚本
+# 6. 添加MongoDB导入脚本
 cat > ./docker/mongo-init.sh << EOF
 #!/bin/bash
 echo "等待MongoDB启动..."
@@ -104,11 +126,11 @@ echo "数据导入完成"
 EOF
 chmod +x ./docker/mongo-init.sh
 
-# 6. 构建和启动Docker容器
+# 7. 构建和启动Docker容器
 info "构建和启动Docker容器..."
-docker-compose down || warn "关闭现有容器时出现警告（如果是首次运行可忽略）"
-docker-compose build --no-cache || error "构建Docker镜像失败"
-docker-compose up -d || error "启动Docker容器失败"
+docker compose down || warn "关闭现有容器时出现警告（如果是首次运行可忽略）"
+docker compose build --no-cache || error "构建Docker镜像失败"
+docker compose up -d || error "启动Docker容器失败"
 
 # 清理未使用的Docker卷
 cleanup_volumes
@@ -116,6 +138,7 @@ cleanup_volumes
 info "=== Docker环境部署完成 ==="
 info "Web应用: http://localhost"
 info "API端点: http://localhost/api"
+info "Spring Boot 服务: http://localhost:3000/api"
 info "数据库服务(从主机访问):"
 info "  - MySQL: localhost:13306"
 info "  - MongoDB: localhost:27018"

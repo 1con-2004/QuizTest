@@ -32,6 +32,24 @@ confirm() {
 # 检查Docker是否运行
 if ! docker info > /dev/null 2>&1; then
     error "Docker未运行，请先启动Docker"
+    
+    # 根据不同操作系统给出启动Docker的提示
+    case "$(uname -s)" in
+        Darwin)
+            echo -e "${YELLOW}请启动Docker Desktop应用程序。${NC}"
+            echo -e "${YELLOW}您可以通过以下方式启动：${NC}"
+            echo -e "1. 在应用程序文件夹中打开Docker.app"
+            echo -e "2. 或在终端中运行: open -a Docker"
+            ;;
+        Linux)
+            echo -e "${YELLOW}请启动Docker服务：${NC}"
+            echo -e "sudo systemctl start docker"
+            ;;
+        *)
+            echo -e "${YELLOW}请确保Docker服务已启动。${NC}"
+            ;;
+    esac
+    exit 1
 fi
 
 echo "=========================="
@@ -46,9 +64,10 @@ echo "2) 清理所有未使用的镜像"
 echo "3) 清理所有停止的容器"
 echo "4) 清理所有未使用的网络"
 echo "5) 全面清理(谨慎使用)"
-echo "6) 退出"
+echo "6) 停止并移除所有当前项目容器"
+echo "7) 退出"
 echo ""
-read -p "请输入选项 [1-6]: " option
+read -p "请输入选项 [1-7]: " option
 
 case $option in
     1)
@@ -118,6 +137,16 @@ case $option in
         info "全面清理完成"
         ;;
     6)
+        info "准备停止并移除当前项目的所有容器..."
+        docker compose ps
+        echo ""
+        warn "此操作将停止并移除当前项目的所有容器!"
+        confirm
+        
+        docker compose down
+        info "已停止并移除当前项目的所有容器"
+        ;;
+    7)
         info "退出清理工具"
         exit 0
         ;;

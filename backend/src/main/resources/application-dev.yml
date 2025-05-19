@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/quiztest
+    username: root
+    password: root
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/quiztest
+    redis:
+      host: localhost
+      port: 6379
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+
+logging:
+  level:
+    com.quiztest: DEBUG
+    org.springframework: INFO 
