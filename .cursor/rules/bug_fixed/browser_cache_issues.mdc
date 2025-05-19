@@ -1,0 +1,102 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 浏览器缓存与前端更新问题
+
+## 问题描述
+
+在前端开发过程中，即使服务端已经提供了更新后的前端资源，用户浏览器仍可能显示旧版本的内容。这是因为浏览器缓存机制会将静态资源（JavaScript、CSS、HTML等文件）存储在本地，以提高加载速度。
+
+## 浏览器缓存工作原理
+
+浏览器缓存分为几个层次：
+
+1. **内存缓存**：存储在RAM中，浏览器关闭后消失
+2. **磁盘缓存**：存储在硬盘上，浏览器关闭后仍然保留
+3. **HTTP缓存**：基于HTTP头的缓存控制，如`Cache-Control`和`ETag`
+
+当用户访问网页时，浏览器首先检查缓存中是否有所需资源，如果有且未过期，则直接从缓存加载，而不发送新的请求。
+
+## 常见的缓存问题
+
+1. **前端代码更新不可见**：修改了代码，但用户看到的仍是旧版本
+2. **CSS样式未更新**：样式改变但未反映在页面上
+3. **功能更新未生效**：新功能已部署但用户无法使用
+
+## 解决方案
+
+### 1. 开发阶段的强制刷新
+
+在开发过程中，可以使用以下方法强制刷新浏览器缓存：
+
+- **Windows/Linux**: `Ctrl+F5` 或 `Ctrl+Shift+R`
+- **Mac**: `Command+Shift+R`
+- **开发者工具**: Chrome/Firefox开发者工具中勾选"Disable cache"选项
+
+### 2. 构建流程中的缓存破坏
+
+现代前端构建工具（如Webpack、Vite等）通过内容哈希自动实现缓存破坏：
+
+```html
+<!-- 构建前 -->
+<script src="/assets/index.js"></script>
+
+<!-- 构建后（带有内容哈希） -->
+<script src="/assets/index-8c1030ab.js"></script>
+```
+
+当文件内容变化时，哈希值也会改变，强制浏览器加载新文件。
+
+### 3. 服务器缓存控制
+
+可以通过HTTP头控制缓存行为：
+
+```nginx
+# Nginx配置示例
+location /assets/ {
+    add_header Cache-Control "public, max-age=31536000, immutable";
+}
+
+location / {
+    add_header Cache-Control "no-cache, must-revalidate";
+}
+```
+
+### 4. 手动缓存破坏
+
+在紧急情况下，可以添加查询参数破坏缓存：
+
+```html
+<script src="/assets/main.js?v=20230522"></script>
+```
+
+## QuizTest项目中的实践
+
+在QuizTest项目中，我们采用以下策略处理缓存问题：
+
+1. **内容哈希命名**：Vite自动为打包后的资源添加内容哈希
+2. **强制重建流程**：使用`quick-docker.sh --force-rebuild-frontend`完全重新构建前端
+3. **提示用户刷新**：在更新后提示用户使用强制刷新
+
+## 最佳实践
+
+1. **合理设置缓存策略**：
+   - 频繁变化的资源（如HTML）设置短期缓存或不缓存
+   - 静态资源（如库文件）设置长期缓存并使用内容哈希
+
+2. **部署流程考虑**：
+   - 先部署静态资源，再部署引用它们的HTML文件
+   - 考虑使用蓝绿部署避免版本不一致问题
+
+3. **用户体验优化**：
+   - 提供明确的更新提示
+   - 考虑实现自动检测更新的机制（如Service Worker）
+
+## 相关文件和资源
+
+- [frontend/vite.config.ts](mdc:frontend/vite.config.ts)：Vite构建配置
+- [scripts/quick-docker.sh](mdc:scripts/quick-docker.sh)：包含前端强制重建功能
+- [nginx/conf](mdc:nginx/conf)：Nginx配置目录
+

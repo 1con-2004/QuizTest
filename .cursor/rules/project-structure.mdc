@@ -8,7 +8,7 @@ alwaysApply: true
 本项目是一个使用Docker容器化的全栈应用，包含以下主要组件：
 
 - 前端：React应用 (`frontend/`)
-- 后端：Node.js服务 (`backend/`)
+- 后端：Java Spring Boot应用 (`backend/`)
 - 数据库：MySQL和MongoDB
 - 缓存：Redis
 - 反向代理：Nginx
@@ -17,15 +17,20 @@ alwaysApply: true
 
 - Docker配置: [docker-compose.yml](mdc:docker-compose.yml)
 - 环境变量: [.env](mdc:.env)
+- 部署脚本: [scripts/quick-docker.sh](mdc:scripts/quick-docker.sh)
 
 ## 目录结构
 
-- `backend/`: Node.js后端服务
-  - `src/controllers/`: API控制器
-  - `src/models/`: 数据模型
-  - `src/routes/`: API路由定义
-  - `src/services/`: 业务逻辑服务
-  - `src/middlewares/`: 中间件
+- `backend/`: Java Spring Boot后端服务
+  - `src/`: 源代码目录
+    - `main/java/com/quiztest/`: Java源代码
+      - `config/`: 配置类
+      - `controller/`: API控制器
+      - `model/`: 数据模型
+      - `repository/`: 数据库访问层
+      - `service/`: 业务逻辑层
+    - `main/resources/`: 资源文件
+  - `target/`: 构建输出目录
 
 - `frontend/`: React前端应用
   - `src/components/`: React组件
@@ -33,9 +38,32 @@ alwaysApply: true
   - `src/api/`: API调用
   - `src/context/`: React上下文
   - `src/hooks/`: 自定义钩子
+  - `dist/`: 构建输出目录
 
 - `nginx/`: Nginx配置
   - `conf/`: Nginx配置文件
   - `certs/`: SSL证书
 
 - `docker/`: Docker相关文件和数据库初始化脚本
+  - `mongo-dump/`: MongoDB数据库初始化数据
+  - `mysql-dump.sql`: MySQL初始化脚本
+  - `mysql-init.sh`: MySQL初始化shell脚本
+  - `mongo-init.sh`: MongoDB初始化脚本
+
+- `scripts/`: 项目辅助脚本
+  - `quick-docker.sh`: 快速启动Docker环境脚本
+    - 支持前端和后端变更检测
+    - 支持强制重建前端并更新Nginx
+    - 使用方法：`./scripts/quick-docker.sh [选项]`
+    - 常用选项：
+      - `--force-rebuild-frontend` - 强制重建前端
+      - `--frontend-only` - 只重建前端
+      - `--backend-only` - 只重建后端
+
+## 主要功能
+
+QuizTest是一个AI面试模拟平台，用户可以：
+- 模拟面试场景
+- 获取AI反馈
+- 练习回答技术问题
+- 追踪学习进度

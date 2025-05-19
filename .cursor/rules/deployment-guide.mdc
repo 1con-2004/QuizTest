@@ -7,7 +7,23 @@ alwaysApply: true
 
 ## 快速启动
 
-使用Docker Compose启动所有服务：
+使用项目脚本快速启动所有服务：
+
+```bash
+# 自动检测并启动所有服务
+./scripts/quick-docker.sh
+
+# 强制重建前端并更新Nginx
+./scripts/quick-docker.sh --force-rebuild-frontend
+
+# 只重建前端
+./scripts/quick-docker.sh --frontend-only
+
+# 只重建后端
+./scripts/quick-docker.sh --backend-only
+```
+
+或者直接使用Docker Compose：
 
 ```bash
 # 启动所有服务
@@ -24,25 +40,31 @@ docker-compose logs -f [服务名称]
 
 ## 环境配置
 
-项目环境变量在[.env](mdc:.env)文件中配置。
+项目环境变量在[.env](mdc:.env)文件中配置。新开发者初次设置可以从[.env.example](mdc:.env.example)复制一份。
 
 ## 数据库管理
 
 ### MySQL
 
+- 版本：8.0
 - 端口: 13306 (主机) -> 3306 (容器)
 - 用户名: root
 - 密码: root
 - 数据库名: quiztest
+- 连接URL: `jdbc:mysql://mysql:3306/quiztest?useSSL=false&allowPublicKeyRetrieval=true`
 
 ### MongoDB
 
+- 版本：7.0
 - 端口: 27018 (主机) -> 27017 (容器) 
 - 数据库名: quiztest
+- 连接URL: `mongodb://mongodb:27017/quiztest`
 
 ### Redis
 
+- 版本：8.0
 - 端口: 16379 (主机) -> 6379 (容器)
+- 连接URL: `redis://redis:6379`
 
 ## Nginx配置
 
@@ -51,15 +73,39 @@ docker-compose logs -f [服务名称]
 - 配置文件: [nginx/conf](mdc:nginx/conf)
 - SSL证书: [nginx/certs](mdc:nginx/certs)
 
-## 数据备份
+## 数据持久化
 
-数据库备份通过卷映射实现：
+数据库数据通过Docker命名卷持久化：
 - MySQL: quiztest_mysql_data
 - MongoDB: quiztest_mongodb_data
 - Redis: quiztest_redis_data
+- 前端构建产物: frontend_build
+
+## 代码部署流程
+
+1. 修改前端代码后：
+   ```bash
+   ./scripts/quick-docker.sh --force-rebuild-frontend
+   ```
+
+2. 修改后端代码后：
+   ```bash
+   ./scripts/quick-docker.sh --backend-only
+   ```
+
+3. 同时修改前后端代码：
+   ```bash
+   ./scripts/quick-docker.sh -a
+   ```
 
 ## 常见问题处理
 
 1. **服务无法启动**: 检查日志 `docker-compose logs [服务名]`
 2. **数据库连接问题**: 确认网络配置和数据库凭据
 3. **前端无法访问API**: 检查Nginx配置和代理设置
+4. **前端更新不生效**: 
+   - 使用 `./scripts/quick-docker.sh --force-rebuild-frontend` 强制重建前端
+   - 清除浏览器缓存 (Ctrl+F5 或 Command+Shift+R)
+5. **后端服务重启失败**:
+   - 检查MySQL连接配置是否正确
+   - 确认环境变量配置匹配

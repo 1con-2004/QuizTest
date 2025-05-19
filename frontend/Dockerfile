@@ -22,7 +22,11 @@ RUN pnpm build
 # 运行阶段
 FROM nginx:alpine
 
+# 设置工作目录
+WORKDIR /app
+
 # 从构建阶段复制构建结果到nginx目录
+COPY --from=build /app/dist /app/dist
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # 复制nginx配置文件

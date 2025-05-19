@@ -14,7 +14,9 @@ MySQL主要用于存储结构化数据和需要事务支持的数据。
 配置信息：
 - 版本: 8.0
 - 端口: 13306 (主机) -> 3306 (容器)
-- 连接URL: `mysql://root:root@mysql:3306/quiztest`
+- 连接URL: `jdbc:mysql://mysql:3306/quiztest?useSSL=false&allowPublicKeyRetrieval=true`
+- 用户名: root
+- 密码: root
 - 数据库名: quiztest
 
 更多配置详情请参考：[DATABASE_CONFIG.md](mdc:DATABASE_CONFIG.md)
@@ -24,7 +26,7 @@ MySQL主要用于存储结构化数据和需要事务支持的数据。
 MongoDB主要用于存储非结构化或半结构化数据。
 
 配置信息：
-- 版本: 6.0
+- 版本: 7.0
 - 端口: 27018 (主机) -> 27017 (容器)
 - 连接URL: `mongodb://mongodb:27017/quiztest`
 - 数据库名: quiztest
@@ -36,21 +38,71 @@ MongoDB数据导入目录：[docker/mongo-dump/quiztest](mdc:docker/mongo-dump/q
 数据通过Docker卷持久化：
 - MySQL: quiztest_mysql_data
 - MongoDB: quiztest_mongodb_data
+- Redis: quiztest_redis_data
 
 ## 缓存 (Redis)
 
 Redis用于缓存和会话管理：
-- 版本: 7.0
+- 版本: 8.0
 - 端口: 16379 (主机) -> 6379 (容器)
 - 连接URL: `redis://redis:6379`
+
+## 数据库连接配置
+
+### 在Docker环境中
+
+后端服务通过Docker网络直接连接到数据库服务：
+
+```yaml
+# docker-compose.yml中的后端配置
+backend:
+  environment:
+    - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DOCKER_MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true
+    - SPRING_DATASOURCE_USERNAME=root
+    - SPRING_DATASOURCE_PASSWORD=${DOCKER_MYSQL_ROOT_PASSWORD}
+    - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/${DB_MONGODB_DATABASE}
+    - SPRING_REDIS_HOST=redis
+    - SPRING_REDIS_PORT=6379
+```
+
+### 在本地开发环境
+
+本地开发时使用.env中的配置连接到数据库：
+
+```properties
+# 本地开发环境配置
+DB_MYSQL_HOST=localhost
+DB_MYSQL_PORT=3306
+DB_MYSQL_USERNAME=root
+DB_MYSQL_PASSWORD=root
+DB_MYSQL_DATABASE=quiztest
+
+DB_MONGODB_HOST=localhost
+DB_MONGODB_PORT=27017
+DB_MONGODB_DATABASE=quiztest
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+```
 
 ## 数据模型
 
 后端数据模型定义位于：
-- MySQL模型: backend/src/models/
-- MongoDB模型: [backend/src/models/mongoose/](mdc:backend/src/models/mongoose)
+- MySQL实体类: backend/src/main/java/com/quiztest/model/entity/mysql
+- MongoDB实体类: backend/src/main/java/com/quiztest/model/entity/mongo
 
 ## 备份和恢复
 
 MySQL初始化脚本: [docker/mysql-dump.sql](mdc:docker/mysql-dump.sql)
 MongoDB初始化脚本: [docker/mongo-init.sh](mdc:docker/mongo-init.sh)
+
+## 常见问题
+
+1. **MySQL连接错误**:
+   - 检查用户名密码配置是否正确
+   - 确认环境变量与docker-compose.yml中的设置匹配
+   - 注意使用`allowPublicKeyRetrieval=true`参数解决密钥检索问题
+
+2. **MongoDB连接问题**:
+   - 确保正确使用Docker网络名称（mongodb而非localhost）
+   - 验证数据库名称配置

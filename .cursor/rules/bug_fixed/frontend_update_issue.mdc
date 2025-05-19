@@ -1,0 +1,122 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 前端更新问题修复指南
+
+## 问题描述
+
+在Docker环境中修改前端代码后（例如修改Home组件的标题文本），即使重新构建了前端容器，更改也不会在浏览器中显示。即使使用`quick-docker.sh -f`或`--frontend-only`选项重构前端，前端的更改仍然没有被正确地反映在网页上。
+
+## 问题原因
+
+1. **Docker卷缓存问题**：即使重建了前端容器，Docker卷`frontend_build`可能仍然保留旧内容，导致Nginx继续提供旧版本的前端文件。
+
+2. **容器依赖关系**：前端容器和Nginx容器之间的卷共享可能没有正确同步更新。
+
+3. **Docker缓存机制**：默认情况下，Docker构建会使用缓存，可能导致构建过程不会处理已更改的文件。
+
+4. **浏览器缓存**：即使服务器端文件已更新，浏览器仍可能使用缓存的版本。
+
+## 修复方案
+
+### 1. 增强前端重建流程
+
+修改`quick-docker.sh`脚本，完善强制重建前端的逻辑：
+
+```bash
+# 强制重建前端并更新Nginx
+force_rebuild_frontend() {
+  # 停止并删除前端和Nginx容器
+  docker-compose stop frontend nginx
+  
+  # 移除容器（确保卷可以被删除）
+  docker-compose rm -f frontend nginx
+  
+  # 删除旧的构建卷
+  docker volume rm quiztest_frontend_build || true
+  
+  # 清理前端构建缓存
+  rm -rf frontend/node_modules/.cache frontend/dist || true
+  
+  # 强制创建新的卷
+  docker volume create quiztest_frontend_build
+  
+  # 重新构建并启动前端（禁用缓存）
+  docker-compose build --no-cache frontend
+  docker-compose up -d frontend
+  
+  # 等待前端构建完成（给予充足时间）
+  sleep 10
+  
+  # 启动Nginx
+  docker-compose up -d nginx
+}
+```
+
+### 2. 完全清除构建缓存
+
+在重建过程中，确保清除所有级别的缓存：
+
+- 删除Docker容器
+- 移除Docker卷
+- 清除本地构建缓存目录
+- 使用`--no-cache`参数强制Docker完全重新构建
+
+### 3. 在`--frontend-only`选项中使用强制重建逻辑
+
+确保当用户使用`-f`或`--frontend-only`选项时，使用完整的强制重建流程：
+
+```bash
+elif [[ "$FRONTEND_ONLY" == "true" ]]; then
+  info "只重建前端服务 (使用强制重建逻辑)..."
+  force_rebuild_frontend
+  check_status
+  # ...其他日志输出
+  exit 0
+fi
+```
+
+### 4. 提醒用户刷新浏览器缓存
+
+在前端重建完成后，明确提示用户需要强制刷新浏览器缓存：
+
+```bash
+info "请使用 Ctrl+F5 或 Command+Shift+R 强制刷新浏览器缓存以查看更新"
+```
+
+## 验证方法
+
+执行重建命令后，可以通过以下方式验证更新是否成功：
+
+1. 检查Nginx容器中的静态文件是否已更新：
+   ```bash
+   docker exec quiztest-nginx cat /usr/share/nginx/html/index.html
+   ```
+
+2. 确认JS文件的哈希值是否已更改（例如从`index-c2462249.js`变为`index-8c1030ab.js`）
+
+3. 在浏览器中使用强制刷新（Ctrl+F5 或 Command+Shift+R）查看更新后的页面
+
+## 最佳实践
+
+1. **使用Docker命名卷时的注意事项**：
+   - 当使用命名卷在容器间共享数据时，需要注意卷的生命周期管理
+   - 在需要强制更新时，应考虑完全重建卷而非仅重建容器
+
+2. **前端资源缓存策略**：
+   - 对于生产环境，考虑使用基于内容哈希的文件名（Vite默认行为）
+   - 提醒用户在前端更新后强制刷新浏览器缓存
+
+3. **Docker构建优化**：
+   - 在开发环境中，平衡构建速度和内容更新的要求
+   - 在关键更新时使用`--no-cache`参数确保完全重建
+
+## 相关文件
+
+- [docker-compose.yml](mdc:docker-compose.yml)：Docker服务配置
+- [frontend/Dockerfile](mdc:frontend/Dockerfile)：前端构建配置
+- [scripts/quick-docker.sh](mdc:scripts/quick-docker.sh)：快速启动脚本
+- [frontend/src/pages/Home/index.tsx](mdc:frontend/src/pages/Home/index.tsx)：示例前端组件
+

@@ -8,7 +8,7 @@ const Home: React.FC = () => {
     <div className={styles.container}>
       <Result
         icon={<SmileOutlined />}
-        title="QuizTest 项目启动成功！！！"
+        title="QuizTest 项目启动成功!!!"
         subTitle="欢迎使用 QuizTest AI面试模拟平台"
         extra={[
           <Button type="primary" key="console">

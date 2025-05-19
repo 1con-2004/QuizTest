@@ -1,108 +1,114 @@
-# 数据库配置说明
+# 数据库配置指南
 
-本项目使用了三种数据库：MySQL、MongoDB和Redis。以下是关于如何配置和检查这些数据库的指南。
+本文档介绍如何配置 QuizTest 项目的数据库连接。
 
-## MySQL 配置
+## 环境变量配置
 
-### 当前配置
-- 版本：8.0.39
-- 连接URL：`mysql://root:root@localhost:3306/quiztest`
-- 端口：3306
-- 数据库名：quiztest（注意大小写）
-- 用户名：root
-- 密码：root
+QuizTest 项目使用 `.env` 文件管理所有数据库连接信息和其他环境变量。这种方式允许每个开发人员在本地使用自己的数据库配置，而不需要修改代码。
 
-### 如何配置
+### 设置步骤
 
-1. 安装MySQL：
-   - macOS: `brew install mysql`
-   - Windows: 从[MySQL官网](https://dev.mysql.com/downloads/mysql/)下载安装程序
-
-2. 启动MySQL服务：
-   - macOS: `brew services start mysql`
-   - Windows: 通过服务管理器或命令`net start mysql`
-
-3. 创建数据库：
-   ```sql
-   CREATE DATABASE IF NOT EXISTS quiztest;
-   ```
-
-4. 修改配置（如果需要）：
-   在项目根目录的`.env`文件中修改`DATABASE_URL`变量。
-
-5. 检查连接：
+1. 复制 `.env.example` 为 `.env`：
    ```bash
-   mysql -u root -p -e "SHOW DATABASES;" | grep quiztest
+   cp .env.example .env
    ```
 
-## MongoDB 配置
-
-### 当前配置
-- 版本：8.0.9
-- 连接URI：`mongodb://localhost:27017/quiztest`
-- 端口：27017
-- 数据库名：quiztest
-
-### 如何配置
-
-1. 安装MongoDB：
-   - macOS: `brew install mongodb-community`
-   - Windows: 从[MongoDB官网](https://www.mongodb.com/try/download/community)下载安装程序
-
-2. 启动MongoDB服务：
-   - macOS: `brew services start mongodb-community`
-   - Windows: 通过服务管理器或命令`net start MongoDB`
-
-3. 修改配置（如果需要）：
-   在项目根目录的`.env`文件中修改`MONGODB_URI`变量。
-
-4. 检查连接：
-   ```bash
-   mongosh --eval "db.adminCommand('listDatabases')" | grep quiztest
+2. 编辑 `.env` 文件，修改为你的本地环境配置：
+   ```properties
+   # 主要修改以下内容：
+   DB_MYSQL_HOST=localhost
+   DB_MYSQL_PORT=3306
+   DB_MYSQL_USERNAME=root
+   DB_MYSQL_PASSWORD=your_password  # 修改为你的MySQL密码
+   
+   DB_MONGODB_HOST=localhost
+   DB_MONGODB_PORT=27017
+   
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
    ```
 
-## Redis 配置
+### 环境变量详解
 
-### 当前配置
-- 版本：7.2.7
-- 连接URL：`redis://localhost:6379`
-- 端口：6379
+#### MySQL 配置
 
-### 如何配置
+```properties
+# MySQL基本配置
+DB_MYSQL_HOST=localhost       # MySQL主机地址
+DB_MYSQL_PORT=3306            # MySQL端口
+DB_MYSQL_USERNAME=root        # MySQL用户名
+DB_MYSQL_PASSWORD=password    # MySQL密码
+DB_MYSQL_DATABASE=quiztest    # MySQL数据库名
 
-1. 安装Redis：
-   - macOS: `brew install redis`
-   - Windows: 使用[Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install)或从[Redis官网](https://redis.io/download)下载
-
-2. 启动Redis服务：
-   - macOS: `brew services start redis`
-   - Windows (WSL): `sudo service redis-server start`
-
-3. 修改配置（如果需要）：
-   在项目根目录的`.env`文件中修改`REDIS_URL`变量。
-
-4. 检查连接：
-   ```bash
-   redis-cli ping
-   ```
-   如果返回`PONG`，则表示连接成功。
-
-## Docker 配置
-
-如果使用Docker运行项目，环境变量会被docker-compose.yml文件中的配置覆盖：
-
-```yaml
-# MySQL 配置
-DATABASE_URL=mysql://root:password@mysql:3306/quiztest
-
-# MongoDB 配置
-MONGODB_URI=mongodb://mongodb:27017/quiztest
-
-# Redis 配置
-REDIS_URL=redis://redis:6379
+# 构建的MySQL连接URL (不需要手动修改)
+DATABASE_URL=mysql://${DB_MYSQL_USERNAME}:${DB_MYSQL_PASSWORD}@${DB_MYSQL_HOST}:${DB_MYSQL_PORT}/${DB_MYSQL_DATABASE}
 ```
 
-注意Docker环境中的主机名使用的是服务名（如`mysql`、`mongodb`和`redis`），而不是`localhost`。
+#### MongoDB 配置
+
+```properties
+# MongoDB基本配置
+DB_MONGODB_HOST=localhost     # MongoDB主机地址
+DB_MONGODB_PORT=27017         # MongoDB端口
+DB_MONGODB_DATABASE=quiztest  # MongoDB数据库名
+
+# 构建的MongoDB连接URL (不需要手动修改)
+MONGODB_URI=mongodb://${DB_MONGODB_HOST}:${DB_MONGODB_PORT}/${DB_MONGODB_DATABASE}
+```
+
+#### Redis 配置
+
+```properties
+# Redis基本配置
+REDIS_HOST=localhost          # Redis主机地址
+REDIS_PORT=6379               # Redis端口
+
+# 构建的Redis连接URL (不需要手动修改)
+REDIS_URL=redis://${REDIS_HOST}:${REDIS_PORT}
+```
+
+#### Docker 环境配置
+
+```properties
+# MySQL Docker配置 
+DOCKER_MYSQL_ROOT_PASSWORD=root  # Docker中MySQL的root密码
+DOCKER_MYSQL_DATABASE=quiztest    # Docker中MySQL的数据库名
+DOCKER_MYSQL_PORT=13306           # MySQL映射到主机的端口
+
+# MongoDB Docker配置
+DOCKER_MONGODB_PORT=27018         # MongoDB映射到主机的端口
+
+# Redis Docker配置
+DOCKER_REDIS_PORT=16379           # Redis映射到主机的端口
+```
+
+## 特殊情况
+
+### 1. 使用现有数据库
+
+如果你需要连接到已经存在的数据库，而不是修改单独的配置项，可以直接设置连接URL：
+
+```properties
+# 直接设置连接URL
+DATABASE_URL=mysql://用户名:密码@主机:端口/数据库名
+MONGODB_URI=mongodb://主机:端口/数据库名
+REDIS_URL=redis://主机:端口
+```
+
+### 2. 使用环境变量优先级
+
+配置系统会按照以下优先级使用配置：
+
+1. 完整的连接URL (`DATABASE_URL`, `MONGODB_URI`, `REDIS_URL`)
+2. 分解的配置项 (`DB_MYSQL_HOST` 等)
+3. 默认值
+
+## 注意事项
+
+1. `.env` 文件包含敏感信息，已添加到 `.gitignore`，不会被提交到版本控制系统
+2. 每个团队成员应该根据自己的本地环境创建自己的 `.env` 文件
+3. 修改环境变量后需要重启服务才能生效
+4. Docker 开发环境会使用 `.env` 文件中的 Docker 相关配置
 
 ## 项目使用的库和ORM
 

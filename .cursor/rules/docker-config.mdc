@@ -10,14 +10,17 @@ alwaysApply: true
 ## 主要服务
 
 1. **后端服务 (backend)**
-   - 基于Node.js
+   - 基于Java Spring Boot
+   - 使用多阶段构建
    - 暴露3000端口
    - 连接到MySQL、MongoDB和Redis
    - 环境变量配置在docker-compose.yml和[.env](mdc:.env)文件中
 
 2. **前端服务 (frontend)**
    - 基于React
-   - 编译后的静态文件由Nginx提供服务
+   - 使用多阶段构建
+   - 编译后的静态文件放置到命名卷 `frontend_build`
+   - 提供给Nginx容器使用
 
 3. **MySQL数据库**
    - 版本：8.0
@@ -26,13 +29,13 @@ alwaysApply: true
    - 持久化存储：quiztest_mysql_data卷
 
 4. **MongoDB数据库**
-   - 版本：6.0
+   - 版本：7.0
    - 端口映射：27018:27017
-   - 初始化脚本：mongo-init.sh
+   - 初始化脚本：[docker/mongo-init.sh](mdc:docker/mongo-init.sh)
    - 持久化存储：quiztest_mongodb_data卷
 
 5. **Redis缓存**
-   - 版本：7.0
+   - 版本：8.0
    - 端口映射：16379:6379
    - 持久化存储：quiztest_redis_data卷
 
@@ -41,6 +44,7 @@ alwaysApply: true
    - 端口映射：80:80, 443:443（HTTP和HTTPS）
    - 配置目录：[nginx/conf](mdc:nginx/conf)
    - SSL证书：[nginx/certs](mdc:nginx/certs)
+   - 使用命名卷 `frontend_build` 获取前端静态文件
 
 ## 网络配置
 
@@ -49,6 +53,39 @@ alwaysApply: true
 ## 数据持久化
 
 使用命名卷存储数据：
-- quiztest_mysql_data
-- quiztest_mongodb_data
-- quiztest_redis_data
+- quiztest_mysql_data：MySQL数据
+- quiztest_mongodb_data：MongoDB数据
+- quiztest_redis_data：Redis数据
+- frontend_build：前端构建产物（确保Nginx和前端容器共享内容）
+
+## 前端构建流程
+
+前端的Docker构建使用多阶段流程：
+1. 使用Node.js基础镜像构建React应用
+2. 构建产物放置到命名卷 `frontend_build`
+3. Nginx容器挂载该卷提供前端服务
+
+这种方式确保前端更新能正确反映在Web界面上。
+
+## 环境变量
+
+项目使用统一的环境变量配置：
+- 生产环境：[.env](mdc:.env)
+- 示例配置：[.env.example](mdc:.env.example)
+
+## 脚本使用
+
+使用[scripts/quick-docker.sh](mdc:scripts/quick-docker.sh)脚本快速部署项目：
+```bash
+# 使用自动检测启动所有服务
+./scripts/quick-docker.sh
+
+# 强制重建前端并更新Nginx
+./scripts/quick-docker.sh --force-rebuild-frontend
+
+# 只重建前端
+./scripts/quick-docker.sh --frontend-only
+
+# 只重建后端
+./scripts/quick-docker.sh --backend-only
+```

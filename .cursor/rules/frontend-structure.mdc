@@ -27,6 +27,38 @@ alwaysApply: true
 - `dist/`: Vite构建输出目录
   - `assets/`: 打包后的资源文件
 
+## Docker构建
+
+前端使用多阶段Docker构建，配置文件为 [frontend/Dockerfile](mdc:frontend/Dockerfile)：
+
+1. **构建阶段**:
+   - 使用 `node:18-alpine` 作为基础镜像
+   - 使用 pnpm 安装依赖并构建项目
+   - 输出构建产物到 `/app/dist` 目录
+
+2. **运行阶段**:
+   - 使用 `nginx:alpine` 作为基础镜像
+   - 将构建产物复制到 `/app/dist` 和 `/usr/share/nginx/html` 目录
+   - 使用命名卷 `frontend_build` 与Nginx容器共享构建产物
+
+## 前端开发
+
+本地开发使用Vite开发服务器：
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
+
+## 前端更新
+
+当修改前端代码后，需要使用以下命令更新Docker环境中的前端：
+```bash
+./scripts/quick-docker.sh --force-rebuild-frontend
+```
+
+这会强制重建前端容器并更新Nginx中的静态文件，确保变更生效。
+
 ## 环境配置
 
 环境变量配置以`VITE_`前缀，在docker-compose.yml中设置：
@@ -38,3 +70,4 @@ alwaysApply: true
 2. 使用Context管理全局状态
 3. 使用自定义Hooks抽象复杂逻辑
 4. 按页面组织路由和组件结构
+5. 前端代码修改后使用 `--force-rebuild-frontend` 选项确保更新生效
